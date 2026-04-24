@@ -1,0 +1,14 @@
+node_modules
+.next
+out
+dist
+.env
+.env.local
+.env*.local
+*.log
+npm-debug.log*
+.DS_Store
+coverage
+.vercel
+next-env.d.ts
+/prisma/migrations/dev.db*

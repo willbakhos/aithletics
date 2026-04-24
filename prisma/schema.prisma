@@ -1,0 +1,105 @@
+// AI Olympics — Prisma schema (MVP)
+// Data model intentionally mirrors the brief: User, Aithlete, AttributeSnapshot,
+// Race, RaceEntry, CoachingSession.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id                     String     @id @default(cuid())
+  email                  String     @unique
+  openrouterKeyEncrypted Bytes?
+  createdAt              DateTime   @default(now())
+  aithletes              Aithlete[]
+}
+
+model Aithlete {
+  id            String   @id @default(cuid())
+  userId        String?
+  user          User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+  name          String
+  chosenModel   String
+  // Current attribute vector; also recorded as AttributeSnapshot rows for history
+  attributesJson Json
+  totalRaces    Int      @default(0)
+  wins          Int      @default(0)
+  createdAt     DateTime @default(now())
+
+  snapshots         AttributeSnapshot[]
+  raceEntries       RaceEntry[]
+  coachingSessions  CoachingSession[]
+
+  @@index([userId])
+}
+
+model AttributeSnapshot {
+  id                  String   @id @default(cuid())
+  aithleteId          String
+  aithlete            Aithlete @relation(fields: [aithleteId], references: [id], onDelete: Cascade)
+  attributesJson      Json
+  effectiveFromRaceId String?
+  createdAt           DateTime @default(now())
+
+  @@index([aithleteId, createdAt])
+}
+
+enum RaceStatus {
+  SCHEDULED
+  RUNNING
+  FINISHED
+  FAILED
+}
+
+model Race {
+  id             String       @id @default(cuid())
+  scheduledAt    DateTime
+  startedAt      DateTime?
+  finishedAt     DateTime?
+  conditionsJson Json?
+  seed           String
+  status         RaceStatus   @default(SCHEDULED)
+  createdAt      DateTime     @default(now())
+  entries        RaceEntry[]
+  coachingSessions CoachingSession[]
+
+  @@index([status, scheduledAt])
+  @@index([scheduledAt])
+}
+
+model RaceEntry {
+  id                 String   @id @default(cuid())
+  raceId             String
+  race               Race     @relation(fields: [raceId], references: [id], onDelete: Cascade)
+  aithleteId         String
+  aithlete           Aithlete @relation(fields: [aithleteId], references: [id], onDelete: Cascade)
+  lane               Int
+  finishTimeMs       Int?
+  performanceLogJson Json?
+
+  @@unique([raceId, aithleteId])
+  @@unique([raceId, lane])
+  @@index([aithleteId])
+}
+
+model CoachingSession {
+  id                  String   @id @default(cuid())
+  aithleteId          String
+  aithlete            Aithlete @relation(fields: [aithleteId], references: [id], onDelete: Cascade)
+  raceId              String
+  race                Race     @relation(fields: [raceId], references: [id], onDelete: Cascade)
+  userMessage         String
+  llmResponseRaw      String?
+  proposedDeltasJson  Json?
+  applied             Boolean  @default(false)
+  errorMessage        String?
+  createdAt           DateTime @default(now())
+
+  @@index([aithleteId, createdAt])
+  @@index([raceId])
+}
