@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import "./globals.css";
+import { SiteNav } from "@/components/SiteNav";
 
 export const metadata: Metadata = {
   title: "AI Olympics",
@@ -13,7 +14,10 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en">
-      <body className="bg-neutral-950 text-neutral-100 antialiased">{children}</body>
+      <body className="min-h-screen bg-neutral-950 text-neutral-100 antialiased">
+        <SiteNav />
+        {children}
+      </body>
     </html>
   );
 }
